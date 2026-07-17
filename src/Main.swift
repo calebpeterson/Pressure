@@ -8,7 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var startAtLoginMenuItem: NSMenuItem!
     private var refreshTimer: Timer?
     private let cpuReader = CPUReader()
-    private let highPercentThreshold: Double = 75
+    private let highPercentThreshold: Double = 80
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -35,10 +35,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let memoryPercent = MemoryMetrics.readMemoryUsagePercent()
 
         let title = NSMutableAttributedString()
-        title.append(iconSegment(symbolName: "cpu"))
+        title.append(iconSegment(symbolName: "cpu", color: color(for: cpuPercent)))
         title.append(percentSegment(for: cpuPercent))
         title.append(titleSegment("   "))
-        title.append(iconSegment(symbolName: "memorychip"))
+        title.append(iconSegment(symbolName: "memorychip", color: color(for: memoryPercent)))
         title.append(percentSegment(for: memoryPercent))
 
         statusItem.button?.attributedTitle = title
@@ -53,8 +53,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func percentSegment(for percent: Double?) -> NSAttributedString {
+        titleSegment(percentTitle(for: percent), color: color(for: percent))
+    }
+
+    private func color(for percent: Double?) -> NSColor {
         let isHighPercent = percent.map { $0 > highPercentThreshold } ?? false
-        return titleSegment(percentTitle(for: percent), color: isHighPercent ? .systemRed : .labelColor)
+        return isHighPercent ? .systemRed : .labelColor
     }
 
     private func titleSegment(_ text: String, color: NSColor = .labelColor) -> NSAttributedString {
@@ -67,7 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         )
     }
 
-    private func iconSegment(symbolName: String) -> NSAttributedString {
+    private func iconSegment(symbolName: String, color: NSColor) -> NSAttributedString {
         let font = NSFont.menuBarFont(ofSize: 0)
         let attachment = NSTextAttachment()
 
@@ -86,7 +90,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         let attachmentString = NSMutableAttributedString(attachment: attachment)
-        attachmentString.append(NSAttributedString(string: " ", attributes: [.font: font]))
+        attachmentString.addAttribute(.foregroundColor, value: color, range: NSRange(location: 0, length: attachmentString.length))
+        attachmentString.append(
+            NSAttributedString(
+                string: " ",
+                attributes: [
+                    .foregroundColor: color,
+                    .font: font
+                ]
+            )
+        )
         return attachmentString
     }
 
