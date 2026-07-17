@@ -38,7 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         title.append(iconSegment(symbolName: "cpu", color: color(for: cpuPercent)))
         title.append(percentSegment(for: cpuPercent))
         title.append(titleSegment("   "))
-        title.append(iconSegment(symbolName: "memorychip", color: color(for: memoryPercent)))
+        title.append(iconSegment(symbolName: "square.stack.3d.up", color: color(for: memoryPercent)))
         title.append(percentSegment(for: memoryPercent))
 
         statusItem.button?.attributedTitle = title
