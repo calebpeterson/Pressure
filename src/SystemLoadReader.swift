@@ -99,3 +99,29 @@ enum MemoryMetrics {
         return (usedBytes / totalBytes) * 100.0
     }
 }
+
+enum DiskMetrics {
+    static func readDiskUsagePercent() -> Double? {
+        let rootVolumeURL = URL(fileURLWithPath: "/")
+
+        guard let values = try? rootVolumeURL.resourceValues(forKeys: [
+            .volumeTotalCapacityKey,
+            .volumeAvailableCapacityForImportantUsageKey
+        ]),
+            let totalCapacity = values.volumeTotalCapacity,
+            let availableCapacity = values.volumeAvailableCapacityForImportantUsage
+        else {
+            return nil
+        }
+
+        let totalBytes = Double(totalCapacity)
+        let availableBytes = Double(availableCapacity)
+
+        guard totalBytes > 0 else {
+            return nil
+        }
+
+        let usedBytes = totalBytes - availableBytes
+        return (usedBytes / totalBytes) * 100.0
+    }
+}

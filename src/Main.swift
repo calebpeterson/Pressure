@@ -33,6 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func updateStatusItem() {
         let cpuPercent = cpuReader.readCPUUsagePercent()
         let memoryPercent = MemoryMetrics.readMemoryUsagePercent()
+        let diskPercent = DiskMetrics.readDiskUsagePercent()
 
         let title = NSMutableAttributedString()
         title.append(iconSegment(symbolName: "cpu", color: color(for: cpuPercent)))
@@ -40,6 +41,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         title.append(titleSegment("   "))
         title.append(iconSegment(symbolName: "square.stack.3d.up", color: color(for: memoryPercent)))
         title.append(percentSegment(for: memoryPercent))
+        title.append(titleSegment("   "))
+        title.append(iconSegment(symbolName: "internaldrive", color: color(for: diskPercent)))
+        title.append(percentSegment(for: diskPercent))
 
         statusItem.button?.attributedTitle = title
     }
