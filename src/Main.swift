@@ -110,6 +110,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func configureMenu() {
         statusMenu.delegate = self
 
+        let openActivityMonitorMenuItem = NSMenuItem(
+            title: "Open Activity Monitor",
+            action: #selector(openActivityMonitor(_:)),
+            keyEquivalent: ""
+        )
+        openActivityMonitorMenuItem.target = self
+        statusMenu.addItem(openActivityMonitorMenuItem)
+
         startAtLoginMenuItem = NSMenuItem(
             title: "Open at Login",
             action: #selector(toggleStartAtLogin(_:)),
@@ -138,6 +146,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         @unknown default:
             startAtLoginMenuItem.state = .off
         }
+    }
+
+    @objc
+    private func openActivityMonitor(_ sender: Any?) {
+        let url = URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app")
+        NSWorkspace.shared.open(url)
     }
 
     @objc

@@ -26,5 +26,6 @@ make kill
 
 Click the menu bar item for:
 
+- `Open Activity Monitor`
 - `Open at Login`
 - `Quit`

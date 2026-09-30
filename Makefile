@@ -1,4 +1,4 @@
-.PHONY: all clean run kill
+.PHONY: all clean run kill restart
 
 APP_NAME = Pressure
 BUILD_DIR = build
@@ -33,3 +33,7 @@ run: $(EXECUTABLE)
 kill:
 	@killall $(APP_NAME) 2>/dev/null || true
 	@echo "Killed any running $(APP_NAME) instances."
+
+restart: kill all
+	@echo "Relaunching $(APP_NAME).app..."
+	@open $(APP_BUNDLE)
