@@ -7,7 +7,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let statusMenu = NSMenu()
     private var startAtLoginMenuItem: NSMenuItem!
     private var refreshTimer: Timer?
+    private var thermalObserver: NSObjectProtocol?
     private let cpuReader = CPUReader()
+    private let sensorReader = makePlatformSensorReader()
+    private var lastCPUPercent: Double?
     private let highPercentThreshold: Double = 80
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -17,6 +20,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         updateStatusItem()
         updateStartAtLoginMenuItemState()
 
+        thermalObserver = NotificationCenter.default.addObserver(
+            forName: ProcessInfo.thermalStateDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateStatusItem(sampleCPU: false)
+        }
+
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
             self?.updateStatusItem()
         }
@@ -24,16 +35,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         refreshTimer?.invalidate()
+        if let thermalObserver {
+            NotificationCenter.default.removeObserver(thermalObserver)
+        }
     }
 
     func menuWillOpen(_ menu: NSMenu) {
         updateStartAtLoginMenuItemState()
     }
 
-    private func updateStatusItem() {
-        let cpuPercent = cpuReader.readCPUUsagePercent()
+    private func updateStatusItem(sampleCPU: Bool = true) {
+        if sampleCPU {
+            lastCPUPercent = cpuReader.readCPUUsagePercent()
+        }
+        let cpuPercent = lastCPUPercent
         let memoryPercent = MemoryMetrics.readMemoryUsagePercent()
         let diskPercent = DiskMetrics.readDiskUsagePercent()
+        let temperature = sensorReader.cpuTemperatureFahrenheit()
+        let cpuLimit = sensorReader.cpuPerformanceLimitPercent()
+        let thermalState = ProcessInfo.processInfo.thermalState
+        let temperatureTitle = temperature.map { String(format: "%.0f°F", $0) } ?? "--°F"
+        let cpuLimitTitle = cpuLimit.map { "\($0)%" } ?? "--%"
 
         let title = NSMutableAttributedString()
         title.append(iconSegment(symbolName: "cpu", color: color(for: cpuPercent)))
@@ -44,8 +66,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         title.append(titleSegment("   "))
         title.append(iconSegment(symbolName: "internaldrive", color: color(for: diskPercent)))
         title.append(percentSegment(for: diskPercent))
+        title.append(titleSegment("   "))
+        title.append(iconSegment(symbolName: thermalSymbol(for: thermalState), color: .labelColor))
+        title.append(titleSegment("\(temperatureTitle) · \(cpuLimitTitle)"))
 
         statusItem.button?.attributedTitle = title
+        statusItem.button?.setAccessibilityLabel(
+            "CPU usage \(percentTitle(for: cpuPercent)), memory usage \(percentTitle(for: memoryPercent)), disk usage \(percentTitle(for: diskPercent)), CPU temperature \(temperatureTitle), CPU performance limit \(cpuLimitTitle), thermal state \(thermalStateDescription(for: thermalState))"
+        )
+    }
+
+    private func thermalSymbol(for state: ProcessInfo.ThermalState) -> String {
+        switch state {
+        case .nominal: return "thermometer.low"
+        case .fair: return "thermometer.medium"
+        case .serious: return "thermometer.high"
+        case .critical: return "exclamationmark.triangle.fill"
+        @unknown default: return "questionmark"
+        }
+    }
+
+    private func thermalStateDescription(for state: ProcessInfo.ThermalState) -> String {
+        switch state {
+        case .nominal: return "nominal"
+        case .fair: return "fair"
+        case .serious: return "serious"
+        case .critical: return "critical"
+        @unknown default: return "unknown"
+        }
     }
 
     private func percentTitle(for percent: Double?) -> String {

@@ -15,7 +15,7 @@ all: $(EXECUTABLE)
 $(EXECUTABLE): $(SOURCES) $(INFO_PLIST)
 	@echo "Building $(APP_NAME).app..."
 	@mkdir -p $(MACOS_DIR) $(MODULE_CACHE_DIR)
-	@swiftc $(SOURCES) -parse-as-library -module-cache-path $(MODULE_CACHE_DIR) -o $(EXECUTABLE)
+	@swiftc $(SOURCES) -parse-as-library -module-cache-path $(MODULE_CACHE_DIR) -framework IOKit -o $(EXECUTABLE)
 	@echo "Copying Info.plist..."
 	@cp $(INFO_PLIST) $(CONTENTS_DIR)/Info.plist
 	@echo "Signing app bundle..."
